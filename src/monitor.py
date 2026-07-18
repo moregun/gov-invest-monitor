@@ -44,10 +44,9 @@ def run_realtime_snapshot():
     for item in data:
         premium_flag = "🔺" if item["premium_rate"] > 0.05 else "  "
         print(f"  {premium_flag} {item['name']}({item['code']}): "
-              f"价格={item['price']:.3f}, 溢价率={item['premium_rate']:.3f}%")
+              f"价格={item['price']:.3f}, 估值净值={item['nav']:.3f}, "
+              f"溢价率={item['premium_rate']:.3f}%")
 
-    # 保存快照
-    fetcher.save_hourly_snapshot()
     return data
 
 
@@ -423,22 +422,21 @@ def main():
 
     realtime_data = None
 
+    # 实时快照（--all / --realtime 时抓取，供溢价率维度与面板使用）
     if args.all or args.realtime:
         realtime_data = run_realtime_snapshot()
-    else:
-        # 即使不抓实时，也尝试加载已有数据
-        realtime_data = None
 
+    # 每日汇总（份额变动 + 资金估算）
     if args.all or args.daily:
         run_daily_summary()
 
+    # 分析报告（依赖实时数据时传入，否则基于历史份额数据）
     report = None
     if args.all or args.report or args.dashboard:
         report = run_analysis_report(realtime_data)
 
+    # 可视化面板
     if args.all or args.dashboard:
-        if report is None:
-            report = run_analysis_report(realtime_data)
         generate_dashboard(report, realtime_data or [])
 
     print("\n✓ 监控任务执行完成")

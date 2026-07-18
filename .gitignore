@@ -37,9 +37,10 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# 数据文件（保留目录结构，忽略具体数据）
+# 数据文件（保留目录结构，忽略原始数据，仅跟踪累计的历史CSV）
 data/*
 !data/.gitkeep
+!data/etf_daily_data.csv
 
 # 日志
 *.log

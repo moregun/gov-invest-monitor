@@ -62,7 +62,7 @@
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/yourname/gov-invest-monitor.git
+git clone https://github.com/moregun/gov-invest-monitor.git
 cd gov-invest-monitor
 
 # 2. 安装依赖
@@ -104,8 +104,8 @@ python src/monitor.py [选项]
 
 3. **工作流自动运行**
    - 已配置 `/.github/workflows/monitor.yml`
-   - 交易日盘中自动执行 3 次实时快照（10:00 / 11:30 / 14:00）
-   - 收盘后 15:10 执行每日汇总并部署面板
+   - 每个交易日收盘后（北京时间 15:10 = UTC 07:10）自动执行一次完整抓取 + 分析 + 部署
+   - 如需盘中多次快照，可在工作流 `schedule` 中自行追加 cron（见下）
 
 4. **手动触发**
    - Actions → ETF Monitor → Run workflow
@@ -115,10 +115,11 @@ python src/monitor.py [选项]
 
 ```yaml
 # Cron 表达式（UTC时间，北京时间 = UTC+8）
-- cron: '0 2 * * 1-5'   # 周一至周五 10:00 上午盘中
-- cron: '30 3 * * 1-5'  # 周一至周五 11:30 上午收盘
-- cron: '0 6 * * 1-5'   # 周一至周五 14:00 下午盘中
-- cron: '10 7 * * 1-5'  # 周一至周五 15:10 收盘汇总
+- cron: '10 7 * * 1-5'  # 周一至周五 15:10 收盘汇总 + 部署面板（默认）
+# 如需盘中多次快照，在 schedule 下追加：
+- cron: '0 2 * * 1-5'   # 周一至周五 10:00
+- cron: '30 3 * * 1-5'  # 周一至周五 11:30
+- cron: '0 6 * * 1-5'   # 周一至周五 14:00
 ```
 
 > 💡 节假日自动无数据，不会产生错误，脚本会优雅处理空数据情况。
@@ -137,8 +138,7 @@ gov-invest-monitor/
 │   ├── analyzer.py              # 国家队资金分析与信号识别
 │   └── monitor.py               # 主入口，命令行调度
 ├── data/                        # 历史数据存储（CSV）
-│   ├── etf_daily_data.csv       # 每日份额与资金数据
-│   └── etf_hour_data.csv        # 日内小时级快照
+│   └── etf_daily_data.csv       # 每日份额与资金数据（自动累积，纳入版本管理）
 ├── output/                      # 产物输出目录
 │   ├── dashboard.html           # 可视化监控面板
 │   └── daily_report.md          # 每日分析报告
@@ -165,7 +165,7 @@ ETF_MONITOR_LIST = [
 NATIONAL_TEAM_THRESHOLD = {
     "premium_rate": 0.05,       # 溢价率阈值(%)
     "share_growth_days": 3,     # 连续增长天数
-    "single_day_inflow": 5,     # 单日净流入阈值(亿元)
+    "etf_period_inflow": 5,     # 单只ETF周期内累计净流入阈值(亿元)
     "multi_etf_sync": 4,        # 同步流入ETF数量
 }
 ```
@@ -174,13 +174,28 @@ NATIONAL_TEAM_THRESHOLD = {
 
 ## 📊 数据源说明
 
-| 数据类型 | 数据源 | 更新频率 |
-|----------|--------|----------|
-| 实时行情（价格、净值、溢价） | 新浪财经 hq.sinajs.cn | 实时 |
-| ETF份额历史 | 东方财富基金规模接口 | T+1日更新 |
-| 资金流入估算 | 份额变动 × 净值 | 每日计算 |
+| 数据类型 | 数据源 | 状态 | 更新频率 |
+|----------|--------|------|----------|
+| 实时行情（价格、涨跌） | 新浪财经 hq.sinajs.cn | ✅ 稳定可用 | 实时 |
+| 净值 / IOPV 近似（溢价率计算） | 天天基金盘中估值 fundgz.1234567.com.cn | ✅ 稳定可用 | 实时 |
+| ETF 份额历史（资金测算） | 东方财富 fundMnfh 接口 | ⚠️ 接口需鉴权，可能不可用 | T+1 日更新 |
+| 资金流入估算 | 份额变动 × 净值 | 依赖份额数据 | 每日计算 |
 
-> 所有数据均来自公开免费接口，无需 API Key，开箱即用。
+> 前两项（实时价 + 净值）为公开免费接口，无需 API Key，开箱即用，已实测验证。
+> 溢价率维度（一级市场申购特征）完全依赖上述两项，可独立运行并给出护盘信号。
+
+### ⚠️ 关于"份额历史 / 4日资金流入"数据
+
+国家队识别的「分散布局」「持续申购」两个维度依赖 ETF 份额历史数据。由于免费份额接口
+（东方财富 `fundMnfh`、新浪基金规模等）当前均返回 404 / 需鉴权，**本仓库默认部署下份额数据为
+best-effort**：获取成功则纳入分析，失败则自动跳过，工具仍可通过溢价率维度正常监测。
+
+如需完整启用「4日累计净流入 / 份额连增」分析，请二选一接入可用份额源：
+1. 安装 [`akshare`](https://github.com/akfamily/akshare) 并替换 `src/data_fetcher.py` 中
+   `fetch_etf_share_history` 的实现（推荐 `fund_etf_spot_em` / `fund_etf_hist_em`）；
+2. 或接入券商 / 数据商提供的份额 API，按现有字段映射（`FSRQ`/`LJFE`/`FE`）解析即可。
+
+> 所有数据均来自公开接口，无需额外 Key；若使用需鉴权接口请自行配置凭证。
 
 ---
 

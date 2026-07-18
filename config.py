@@ -54,15 +54,19 @@ ETF_MONITOR_LIST = [
 
 # 国家队资金判定阈值
 NATIONAL_TEAM_THRESHOLD = {
-    "premium_rate": 0.05,       # 溢价率阈值(%)，持续高于此值疑似大额申购
-    "share_growth_days": 3,     # 连续份额增长天数阈值
-    "single_day_inflow": 5,     # 单日净流入阈值(亿元)
-    "multi_etf_sync": 4,        # 同步流入ETF数量阈值
+    # 溢价率阈值(%)，持续高于此值疑似一级市场大额申购
+    "premium_rate": 0.05,
+    # 连续份额增长天数阈值
+    "share_growth_days": 3,
+    # 单只 ETF 在统计周期内（默认4日）的累计净流入阈值(亿元)，
+    # 用于判定"同步大额流入"。注意：是比较周期内累计值，而非单日值。
+    "etf_period_inflow": 5,
+    # 同步流入 ETF 数量阈值
+    "multi_etf_sync": 4,
 }
 
 # 数据文件路径
 ETF_DAILY_DATA = os.path.join(DATA_DIR, "etf_daily_data.csv")
-ETF_HOUR_DATA = os.path.join(DATA_DIR, "etf_hour_data.csv")
 FLOW_SUMMARY = os.path.join(DATA_DIR, "flow_summary.json")
 
 # 抓取超时设置

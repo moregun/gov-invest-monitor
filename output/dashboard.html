@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>国家队ETF资金监控面板 | gov-invest-monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                         "Microsoft YaHei", sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 24px;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #334155;
+        }
+        .header h1 { font-size: 24px; color: #38bdf8; }
+        .header .meta { font-size: 13px; color: #94a3b8; }
+        .signal-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            background: #10b981;
+            color: white;
+            margin-left: 12px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: #1e293b;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #334155;
+        }
+        .stat-card .label { font-size: 13px; color: #94a3b8; margin-bottom: 8px; }
+        .stat-card .value { font-size: 28px; font-weight: 700; color: #f1f5f9; }
+        .stat-card .value.accent { color: #34d399; }
+
+        .section {
+            background: #1e293b;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        .section h2 {
+            font-size: 16px;
+            color: #f1f5f9;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th {
+            background: #334155;
+            color: #cbd5e1;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 500;
+        }
+        td { padding: 10px 12px; border-bottom: 1px solid #334155; color: #e2e8f0; }
+        tr:hover { background: #273449; }
+        .positive { color: #34d399; font-weight: 600; }
+        .negative { color: #f87171; font-weight: 600; }
+
+        .factor-list { list-style: none; }
+        .factor-item {
+            padding: 10px 14px;
+            background: #273449;
+            border-left: 3px solid #38bdf8;
+            margin-bottom: 8px;
+            border-radius: 0 6px 6px 0;
+            font-size: 14px;
+        }
+
+        #flowChart { width: 100%; height: 320px; }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #334155;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .two-col { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🏛️ 国家队宽基ETF资金监控面板</h1>
+                <span class="signal-badge">弱护盘信号</span>
+            </div>
+            <div class="meta">
+                生成时间: 2026-07-18 23:59:23<br>
+                数据日期: N/A
+            </div>
+        </div>
+
+        <!-- 核心指标卡片 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">护盘信号评分</div>
+                <div class="value">25<span style="font-size:14px;color:#94a3b8">/100</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="label">4日累计预估流入</div>
+                <div class="value accent">0<span style="font-size:14px"> 亿</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="label">同步流入ETF数量</div>
+                <div class="value">0<span style="font-size:14px"> 只</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="label">监控标的总数</div>
+                <div class="value">0<span style="font-size:14px"> 只</span></div>
+            </div>
+        </div>
+
+        <!-- 触发因子 -->
+        <div class="section">
+            <h2>📊 护盘信号触发因子</h2>
+            <ul class="factor-list">
+                <li class="factor-item">��֤50ETF����、����300ETF��̩����、��֤1000ETF�Ϸ� 等多只ETF持续溢价，疑似一级市场大额申购</li>
+            </ul>
+        </div>
+
+        <!-- 资金流入排行 + 图表 -->
+        <div class="two-col">
+            <div class="section">
+                <h2>📈 近4日ETF资金流入排行</h2>
+                <div id="flowChart"></div>
+            </div>
+            <div class="section">
+                <h2>📋 资金流入明细</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>ETF名称</th>
+                            <th>类型</th>
+                            <th>4日流入</th>
+                            <th>连增天数</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 实时行情快照 -->
+        <div class="section">
+            <h2>⏱️ 实时行情快照</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>代码</th>
+                        <th>名称</th>
+                        <th>现价</th>
+                        <th>净值</th>
+                        <th>溢价率</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+            <tr>
+                <td>510050</td>
+                <td>��֤50ETF����</td>
+                <td>2.931</td>
+                <td>2.924</td>
+                <td class="positive">0.229%</td>
+            </tr>
+            <tr>
+                <td>510300</td>
+                <td>����300ETF��̩����</td>
+                <td>4.589</td>
+                <td>4.578</td>
+                <td class="positive">0.249%</td>
+            </tr>
+            <tr>
+                <td>510500</td>
+                <td>��֤500ETF�Ϸ�</td>
+                <td>7.505</td>
+                <td>7.514</td>
+                <td class="">-0.120%</td>
+            </tr>
+            <tr>
+                <td>588000</td>
+                <td>�ƴ�50ETF����</td>
+                <td>1.807</td>
+                <td>1.809</td>
+                <td class="">-0.111%</td>
+            </tr>
+            <tr>
+                <td>512100</td>
+                <td>��֤1000ETF�Ϸ�</td>
+                <td>2.908</td>
+                <td>2.901</td>
+                <td class="positive">0.228%</td>
+            </tr>
+            <tr>
+                <td>159915</td>
+                <td>��ҵ��</td>
+                <td>3.463</td>
+                <td>3.448</td>
+                <td class="positive">0.426%</td>
+            </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            gov-invest-monitor | 数据来源：东方财富、新浪财经公开行情 | 仅供研究参考，不构成投资建议
+        </div>
+    </div>
+
+    <script>
+        // 资金流入柱状图
+        const chart = echarts.init(document.getElementById('flowChart'));
+        const labels = [];
+        const values = [];
+
+        chart.setOption({
+            tooltip: {
+                trigger: 'axis',
+                formatter: '{b}<br/>4日累计流入: {c} 亿元'
+            },
+            grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: labels,
+                axisLabel: { color: '#94a3b8', rotate: 30, fontSize: 11 },
+                axisLine: { lineStyle: { color: '#475569' } }
+            },
+            yAxis: {
+                type: 'value',
+                name: '亿元',
+                axisLabel: { color: '#94a3b8' },
+                axisLine: { lineStyle: { color: '#475569' } },
+                splitLine: { lineStyle: { color: '#334155' } }
+            },
+            series: [{
+                data: values.map(v => ({
+                    value: v,
+                    itemStyle: {
+                        color: v >= 0 ? '#34d399' : '#f87171',
+                        borderRadius: [4, 4, 0, 0]
+                    }
+                })),
+                type: 'bar',
+                barWidth: '50%'
+            }]
+        });
+
+        window.addEventListener('resize', () => chart.resize());
+    </script>
+</body>
+</html>

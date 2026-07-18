@@ -44,11 +44,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 设置时区为 Asia/Shanghai
-        run: |
-          sudo timedatectl set-timezone Asia/Shanghai
-          date
-
       - name: 运行监控脚本
         env:
           TZ: Asia/Shanghai
@@ -67,7 +62,7 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add data/ output/
+          git add -A output/ data/ 2>/dev/null || true
           git diff --staged --quiet || (git commit -m "chore: 自动更新监控数据 $(date '+%Y-%m-%d %H:%M')" && git push)
         continue-on-error: true
 
@@ -82,14 +77,19 @@ jobs:
     needs: monitor
     runs-on: ubuntu-latest
     name: 部署监控面板到 GitHub Pages
-    if: github.event.schedule == '10 7 * * 1-5' || github.event_name == 'workflow_dispatch'
+    # 定时任务 或 手动触发（非 realtime 模式）时部署面板
+    if: >-
+      (github.event.schedule == '10 7 * * 1-5' || github.event_name == 'workflow_dispatch')
+      && github.event.inputs.mode != 'realtime'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Checkout 代码
+      - name: Checkout 代码（含已推送的产出）
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: 下载面板产物
         uses: actions/download-artifact@v4

@@ -100,13 +100,13 @@ class NationalTeamAnalyzer:
             "detail": {},
         }
 
-        if not period_inflow:
-            return signals
+        # 说明：维度1/2/4 依赖份额历史(period_inflow)，维度3(溢价率) 依赖实时数据，
+        # 二者相互独立。即使份额数据缺失，溢价率维度仍可独立触发，故不做整体 early return。
 
-        # 1. 统计同步流入ETF数量
+        # 1. 统计同步流入ETF数量（周期内累计净流入超阈值的ETF）
         inflow_etfs = [
             code for code, data in period_inflow.items()
-            if data["total_inflow_yi"] > self.threshold["single_day_inflow"]
+            if data["total_inflow_yi"] > self.threshold["etf_period_inflow"]
         ]
         signals["sync_inflow_count"] = len(inflow_etfs)
         signals["estimated_total_inflow"] = round(
@@ -149,6 +149,9 @@ class NationalTeamAnalyzer:
                 f"4日累计预估流入超{signals['estimated_total_inflow']}亿元，规模显著"
             )
 
+        # 评分封顶，避免各维度叠加超过 100
+        signals["score"] = min(100, signals["score"])
+
         # 评级
         if signals["score"] >= 80:
             signals["level"] = "强护盘信号"
@@ -159,20 +162,6 @@ class NationalTeamAnalyzer:
 
         signals["detail"] = period_inflow
         return signals
-
-    def calculate_index_drawdown(self, index_code: str = "000905") -> Dict:
-        """
-        计算指数从高点回撤幅度
-        默认中证500(000905)，可扩展
-        注：此处为简化实现，实际部署可接入指数行情接口
-        """
-        # 预留接口，可接入东财指数行情
-        # 实际项目中可通过 akshare 或 tushare 获取完整K线
-        return {
-            "index_code": index_code,
-            "index_name": "中证500",
-            "note": "需接入指数行情接口计算精确回撤，当前版本通过ETF价格近似估算",
-        }
 
     def generate_summary_report(self, realtime_data: List[Dict] = None) -> Dict:
         """生成完整分析报告"""
