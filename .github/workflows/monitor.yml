@@ -1,0 +1,116 @@
+name: ETF Monitor - 国家队资金监控
+
+on:
+  schedule:
+    # 收盘后每日汇总（北京时间 15:10，周一至周五）
+    - cron: '10 7 * * 1-5'  # 周一至周五 15:10 (UTC+8)
+
+  workflow_dispatch:  # 支持手动触发
+    inputs:
+      mode:
+        description: '运行模式'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - realtime
+          - daily
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    name: 执行ETF监控任务
+
+    steps:
+      - name: Checkout 代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 设置时区为 Asia/Shanghai
+        run: |
+          sudo timedatectl set-timezone Asia/Shanghai
+          date
+
+      - name: 运行监控脚本
+        env:
+          TZ: Asia/Shanghai
+        run: |
+          MODE="${{ github.event.inputs.mode || 'all' }}"
+          echo "运行模式: $MODE"
+          if [ "$MODE" = "realtime" ]; then
+            python src/monitor.py --realtime
+          elif [ "$MODE" = "daily" ]; then
+            python src/monitor.py --daily --report --dashboard
+          else
+            python src/monitor.py --all
+          fi
+
+      - name: 提交数据更新到仓库
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/ output/
+          git diff --staged --quiet || (git commit -m "chore: 自动更新监控数据 $(date '+%Y-%m-%d %H:%M')" && git push)
+        continue-on-error: true
+
+      - name: 上传可视化面板产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard
+          path: output/dashboard.html
+          retention-days: 30
+
+  deploy-page:
+    needs: monitor
+    runs-on: ubuntu-latest
+    name: 部署监控面板到 GitHub Pages
+    if: github.event.schedule == '10 7 * * 1-5' || github.event_name == 'workflow_dispatch'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout 代码
+        uses: actions/checkout@v4
+
+      - name: 下载面板产物
+        uses: actions/download-artifact@v4
+        with:
+          name: dashboard
+          path: public
+
+      - name: 复制额外资源
+        run: |
+          if [ -f output/daily_report.md ]; then
+            cp output/daily_report.md public/
+          fi
+
+      - name: 配置 Pages
+        uses: actions/configure-pages@v4
+
+      - name: 上传 Pages 产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: 部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
