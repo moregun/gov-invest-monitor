@@ -58,15 +58,30 @@ class NationalTeamAnalyzer:
             if etf_df.empty:
                 continue
 
+            # 选取净申购口径列（优先 net_subscription_yi），并仅保留该列非空的行，
+            # 避免旧版 f52 历史（缺 net_subscription_yi）污染周期统计。
+            if "net_subscription_yi" in etf_df.columns and \
+                    etf_df["net_subscription_yi"].notna().any():
+                col = "net_subscription_yi"
+            elif "inflow_estimate" in etf_df.columns:
+                col = "inflow_estimate"
+            elif "net_inflow_yi" in etf_df.columns:
+                col = "net_inflow_yi"
+            else:
+                continue
+            etf_df = etf_df[etf_df[col].notna()]
+            if etf_df.empty:
+                continue
+
             period_df = etf_df.tail(days)  # 最近 N 个交易日
 
-            total_inflow = round(period_df["inflow_estimate"].sum(), 2)
-            total_share_change = round(period_df["share_change"].sum(), 2)
+            total_inflow = round(period_df[col].sum(), 2)
+            total_share_change = round(period_df[col].sum(), 2)
 
-            # 连续净流入天数：从最近交易日向前数，遇「非流入日」即中断
+            # 连续净申购天数：从最近交易日向前数，遇「非净申购日」即中断
             consecutive_days = 0
             for _, row in reversed(list(period_df.iterrows())):
-                if row["share_change"] > 0:
+                if row[col] > 0:
                     consecutive_days += 1
                 else:
                     break
@@ -75,10 +90,11 @@ class NationalTeamAnalyzer:
                 "name": etf["name"],
                 "category": etf["category"],
                 "period_days": days,
+                "metric": col,
                 "total_inflow_yi": total_inflow,
                 "total_share_change_yi_fen": total_share_change,
                 "consecutive_growth_days": consecutive_days,
-                "latest_inflow": round(period_df.iloc[-1]["inflow_estimate"], 2),
+                "latest_inflow": round(period_df.iloc[-1][col], 2),
             }
 
         return result
@@ -131,7 +147,7 @@ class NationalTeamAnalyzer:
         if long_consecutive:
             signals["score"] += 30
             signals["trigger_factors"].append(
-                f"{'、'.join(long_consecutive)} 连续{self.threshold['share_growth_days']}日以上净流入，持续性符合国家队操作"
+                f"{'、'.join(long_consecutive)} 连续{self.threshold['share_growth_days']}日以上净申购，持续性符合国家队操作"
             )
 
         # 3. 溢价率特征（需实时数据）
@@ -150,7 +166,7 @@ class NationalTeamAnalyzer:
         if signals["estimated_total_inflow"] > 100:
             signals["score"] += 10
             signals["trigger_factors"].append(
-                f"4日累计预估流入超{signals['estimated_total_inflow']}亿元，规模显著"
+                f"4日累计净申购超{signals['estimated_total_inflow']}亿元，规模显著"
             )
 
         # 评分封顶，避免各维度叠加超过 100
@@ -215,7 +231,7 @@ class NationalTeamAnalyzer:
             f"- **信号等级**：{signal['level']}",
             f"- **综合评分**：{signal['score']}/{signal['max_score']}",
             f"- **同步流入ETF数**：{signal['sync_inflow_count']} 只",
-            f"- **4日累计预估流入**：{report['total_four_day_inflow']} 亿元",
+            f"- **近4日累计净申购**：{report['total_four_day_inflow']} 亿元（份额×净值口径）",
             f"",
         ]
 

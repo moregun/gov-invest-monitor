@@ -68,7 +68,7 @@ def run_analysis_report(realtime_data=None):
 
     signal = report["national_team_signal"]
     print(f"  信号等级: {signal['level']} (评分: {signal['score']}/100)")
-    print(f"  4日累计预估流入: {report['total_four_day_inflow']} 亿元")
+    print(f"  4日累计净申购: {report['total_four_day_inflow']} 亿元")
     print(f"  同步流入ETF数: {signal['sync_inflow_count']} 只")
 
     # 保存Markdown报告
@@ -362,7 +362,7 @@ def build_dashboard_html(report, realtime_data):
         </div>
 
         <div class="footer">
-            gov-invest-monitor | 数据来源：东方财富资金流、新浪/腾讯实时行情、天天基金净值（公开免费接口） | 仅供研究参考，不构成投资建议
+            gov-invest-monitor | 数据来源：东方财富最新份额(akshare)、新浪/腾讯实时行情、天天基金净值（公开免费接口） | 仅供研究参考，不构成投资建议
         </div>
     </div>
 
