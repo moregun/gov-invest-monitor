@@ -105,8 +105,12 @@ jobs:
           name: dashboard
           path: public
 
-      - name: 复制额外资源
+      - name: 复制额外资源并规范为 index.html
         run: |
+          # GitHub Pages 根路径默认服务 index.html；只提供 dashboard.html 会导致访问根地址 404
+          if [ -f public/dashboard.html ]; then
+            cp public/dashboard.html public/index.html
+          fi
           if [ -f output/daily_report.md ]; then
             cp output/daily_report.md public/
           fi
