@@ -17,6 +17,9 @@ on:
           - realtime
           - daily
 
+  push:
+    branches: [main]
+
 permissions:
   contents: write
   pages: write
@@ -59,6 +62,9 @@ jobs:
           fi
 
       - name: 提交数据更新到仓库
+        # push 触发时跳过，避免 push→运行→commit→push 死循环
+        # （部署用 artifact，不依赖仓库内 output/）
+        if: github.event_name != 'push'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
@@ -77,9 +83,11 @@ jobs:
     needs: monitor
     runs-on: ubuntu-latest
     name: 部署监控面板到 GitHub Pages
-    # 定时任务 或 手动触发（非 realtime 模式）时部署面板
+    # push / 定时任务 / 手动触发（非 realtime 模式）时部署面板
     if: >-
-      (github.event.schedule == '10 7 * * 1-5' || github.event_name == 'workflow_dispatch')
+      (github.event_name == 'push'
+       || github.event.schedule == '10 7 * * 1-5'
+       || github.event_name == 'workflow_dispatch')
       && github.event.inputs.mode != 'realtime'
     environment:
       name: github-pages
