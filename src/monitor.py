@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.data_fetcher import ETFDataFetcher
 from src.analyzer import NationalTeamAnalyzer
-from config import OUTPUT_DIR, DATA_DIR
+from config import OUTPUT_DIR, DATA_DIR, NATIONAL_TEAM_THRESHOLD
 
 
 def ensure_dirs():
@@ -42,11 +42,12 @@ def run_realtime_snapshot():
         return []
 
     for item in data:
-        premium_flag = "🔺" if item["premium_rate"] > 0.05 else "  "
+        premium_flag = "🔺" if item["premium_rate"] > NATIONAL_TEAM_THRESHOLD["premium_rate"] else "  "
         print(f"  {premium_flag} {item['name']}({item['code']}): "
               f"价格={item['price']:.3f}, 估值净值={item['nav']:.3f}, "
               f"溢价率={item['premium_rate']:.3f}%")
 
+    fetcher.report_source_status()
     return data
 
 
@@ -55,6 +56,7 @@ def run_daily_summary():
     print("\n[2/4] 抓取每日份额变动数据...")
     fetcher = ETFDataFetcher()
     fetcher.save_daily_summary()
+    fetcher.report_source_status()
     print("  ✓ 每日数据已更新")
 
 
@@ -360,7 +362,7 @@ def build_dashboard_html(report, realtime_data):
         </div>
 
         <div class="footer">
-            gov-invest-monitor | 数据来源：东方财富、新浪财经公开行情 | 仅供研究参考，不构成投资建议
+            gov-invest-monitor | 数据来源：东方财富资金流、新浪/腾讯实时行情、天天基金净值（公开免费接口） | 仅供研究参考，不构成投资建议
         </div>
     </div>
 

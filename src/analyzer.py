@@ -6,7 +6,7 @@
 
 import pandas as pd
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Tuple
 import os
 import sys
@@ -27,45 +27,49 @@ class NationalTeamAnalyzer:
         self.threshold = NATIONAL_TEAM_THRESHOLD
 
     def load_daily_data(self) -> pd.DataFrame:
-        """加载历史日度数据"""
+        """加载历史日度数据。
+        注意：CSV 中 code 会被 pandas 推断为整数（如 510300），而配置中为字符串，
+        统一转 str 避免匹配失败；date 转 datetime 便于排序。
+        """
         if not os.path.exists(ETF_DAILY_DATA):
             return pd.DataFrame()
-        return pd.read_csv(ETF_DAILY_DATA, encoding="utf-8-sig")
+        df = pd.read_csv(ETF_DAILY_DATA, encoding="utf-8-sig")
+        if "code" in df.columns:
+            df["code"] = df["code"].astype(str)
+        if "date" in df.columns:
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        return df
 
     def calculate_period_inflow(self, df: pd.DataFrame, days: int = 4) -> Dict:
         """
-        计算指定周期内各ETF累计净流入
-        对标高盛4日290亿统计口径
+        计算指定周期内各ETF累计净流入（对标高盛4日290亿统计口径）。
+
+        采用「最近 N 个交易日」口径（按行数取 tail），而非按日历日相减，
+        避免节假日/周末造成的窗口错位导致少算或多算交易日。
         """
         if df.empty:
             return {}
 
-        df = df.sort_values("date")
-        latest_date = df["date"].max()
-        start_date = (
-            pd.to_datetime(latest_date) - timedelta(days=days)
-        ).strftime("%Y-%m-%d")
-
-        period_df = df[df["date"] >= start_date]
         result = {}
 
         for etf in ETF_MONITOR_LIST:
-            code = etf["code"]
-            etf_df = period_df[period_df["code"] == code]
+            code = str(etf["code"])
+            etf_df = df[df["code"] == code].sort_values("date")
             if etf_df.empty:
                 continue
 
-            total_inflow = round(etf_df["inflow_estimate"].sum(), 2)
-            total_share_change = round(etf_df["share_change"].sum(), 2)
+            period_df = etf_df.tail(days)  # 最近 N 个交易日
 
-            # 连续增长天数
+            total_inflow = round(period_df["inflow_estimate"].sum(), 2)
+            total_share_change = round(period_df["share_change"].sum(), 2)
+
+            # 连续净流入天数：从最近交易日向前数，遇「非流入日」即中断
             consecutive_days = 0
-            sorted_etf = etf_df.sort_values("date")
-            for _, row in sorted_etf.iterrows():
+            for _, row in reversed(list(period_df.iterrows())):
                 if row["share_change"] > 0:
                     consecutive_days += 1
                 else:
-                    consecutive_days = 0
+                    break
 
             result[code] = {
                 "name": etf["name"],
@@ -74,7 +78,7 @@ class NationalTeamAnalyzer:
                 "total_inflow_yi": total_inflow,
                 "total_share_change_yi_fen": total_share_change,
                 "consecutive_growth_days": consecutive_days,
-                "latest_inflow": round(sorted_etf.iloc[-1]["inflow_estimate"], 2),
+                "latest_inflow": round(period_df.iloc[-1]["inflow_estimate"], 2),
             }
 
         return result
@@ -127,7 +131,7 @@ class NationalTeamAnalyzer:
         if long_consecutive:
             signals["score"] += 30
             signals["trigger_factors"].append(
-                f"{'、'.join(long_consecutive)} 连续{self.threshold['share_growth_days']}日以上份额增长，持续性符合国家队操作"
+                f"{'、'.join(long_consecutive)} 连续{self.threshold['share_growth_days']}日以上净流入，持续性符合国家队操作"
             )
 
         # 3. 溢价率特征（需实时数据）
@@ -171,7 +175,7 @@ class NationalTeamAnalyzer:
 
         report = {
             "generate_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "data_date": df["date"].max() if not df.empty else "N/A",
+            "data_date": df["date"].max().strftime("%Y-%m-%d") if not df.empty else "N/A",
             "national_team_signal": signals,
             "etf_flow_ranking": sorted(
                 [
@@ -242,12 +246,12 @@ class NationalTeamAnalyzer:
             "本监控基于以下国家队操作特征进行识别：",
             "",
             "1. **分散布局**：同时买入多只核心宽基ETF（沪深300/中证500/上证50/科创50等），不集中单一赛道",
-            "2. **持续买入**：连续多日逆市申购，而非单日脉冲式游资行为",
+            "2. **持续净流入**：连续多日净流入，而非单日脉冲式游资行为",
             "3. **一级市场特征**：ETF持续溢价，反映大额一级市场申购",
             "4. **逆周期操作**：市场大跌阶段大额流入，上涨阶段暂停买入",
             "",
             "---",
-            "*数据来源：东方财富、新浪财经公开行情数据 | 仅供研究参考，不构成投资建议*",
+            "*数据来源：东方财富资金流、新浪/腾讯实时行情、天天基金净值（均为公开免费接口） | 仅供研究参考，不构成投资建议*",
         ])
 
         return "\n".join(lines)
