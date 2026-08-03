@@ -122,8 +122,8 @@
                 <span class="signal-badge">中度护盘信号</span>
             </div>
             <div class="meta">
-                生成时间: 2026-07-31 17:52:10<br>
-                数据日期: 2026-07-31
+                生成时间: 2026-08-03 18:51:50<br>
+                数据日期: 2026-08-03
             </div>
         </div>
 
@@ -135,11 +135,11 @@
             </div>
             <div class="stat-card">
                 <div class="label">4日累计预估流入</div>
-                <div class="value accent">519.88<span style="font-size:14px"> 亿</span></div>
+                <div class="value accent">341.57<span style="font-size:14px"> 亿</span></div>
             </div>
             <div class="stat-card">
                 <div class="label">同步流入ETF数量</div>
-                <div class="value">5<span style="font-size:14px"> 只</span></div>
+                <div class="value">4<span style="font-size:14px"> 只</span></div>
             </div>
             <div class="stat-card">
                 <div class="label">监控标的总数</div>
@@ -151,7 +151,7 @@
         <div class="section">
             <h2>📊 护盘信号触发因子</h2>
             <ul class="factor-list">
-                <li class="factor-item">5只宽基ETF同步大额流入，符合国家队分散护盘特征</li><li class="factor-item">科创50ETF、创业板ETF 连续3日以上净申购，持续性符合国家队操作</li><li class="factor-item">4日累计净申购超519.88亿元，规模显著</li>
+                <li class="factor-item">4只宽基ETF同步大额流入，符合国家队分散护盘特征</li><li class="factor-item">中证1000ETF 连续3日以上净申购，持续性符合国家队操作</li><li class="factor-item">4日累计净申购超341.57亿元，规模显著</li>
             </ul>
         </div>
 
@@ -179,43 +179,43 @@
                 <td>1</td>
                 <td>创业板ETF</td>
                 <td>成长宽基</td>
-                <td class="positive">180.68 亿</td>
-                <td>4天</td>
+                <td class="positive">115.64 亿</td>
+                <td>0天</td>
             </tr>
             <tr>
                 <td>2</td>
                 <td>科创50ETF</td>
                 <td>成长宽基</td>
-                <td class="positive">144.06 亿</td>
-                <td>4天</td>
+                <td class="positive">94.18 亿</td>
+                <td>0天</td>
             </tr>
             <tr>
                 <td>3</td>
                 <td>沪深300ETF</td>
                 <td>宽基核心</td>
-                <td class="positive">114.19 亿</td>
-                <td>1天</td>
+                <td class="positive">84.96 亿</td>
+                <td>0天</td>
             </tr>
             <tr>
                 <td>4</td>
                 <td>中证1000ETF</td>
                 <td>小盘宽基</td>
-                <td class="positive">82.95 亿</td>
-                <td>2天</td>
+                <td class="positive">55.57 亿</td>
+                <td>3天</td>
             </tr>
             <tr>
                 <td>5</td>
                 <td>中证500ETF</td>
                 <td>中盘宽基</td>
-                <td class="positive">18.74 亿</td>
-                <td>1天</td>
+                <td class="positive">3.52 亿</td>
+                <td>2天</td>
             </tr>
             <tr>
                 <td>6</td>
                 <td>上证50ETF</td>
                 <td>大盘蓝筹</td>
-                <td class="negative">-20.74 亿</td>
-                <td>0天</td>
+                <td class="negative">-12.30 亿</td>
+                <td>1天</td>
             </tr>
                     </tbody>
                 </table>
@@ -240,42 +240,42 @@
             <tr>
                 <td>510050</td>
                 <td>上证50ETF华夏</td>
-                <td>3.033</td>
+                <td>2.990</td>
                 <td>0.000</td>
                 <td class="">0.000%</td>
             </tr>
             <tr>
                 <td>510300</td>
                 <td>沪深300ETF华泰柏瑞</td>
-                <td>4.653</td>
+                <td>4.599</td>
                 <td>0.000</td>
                 <td class="">0.000%</td>
             </tr>
             <tr>
                 <td>510500</td>
                 <td>中证500ETF南方</td>
-                <td>7.500</td>
+                <td>7.420</td>
                 <td>0.000</td>
                 <td class="">0.000%</td>
             </tr>
             <tr>
                 <td>588000</td>
                 <td>科创50ETF华夏</td>
-                <td>1.728</td>
+                <td>1.636</td>
                 <td>0.000</td>
                 <td class="">0.000%</td>
             </tr>
             <tr>
                 <td>512100</td>
                 <td>中证1000ETF南方</td>
-                <td>2.864</td>
+                <td>2.867</td>
                 <td>0.000</td>
                 <td class="">0.000%</td>
             </tr>
             <tr>
                 <td>159915</td>
                 <td>创业板</td>
-                <td>3.368</td>
+                <td>3.325</td>
                 <td>0.000</td>
                 <td class="">0.000%</td>
             </tr>
@@ -292,7 +292,7 @@
         // 资金流入柱状图
         const chart = echarts.init(document.getElementById('flowChart'));
         const labels = ["创业板ETF", "科创50ETF", "沪深300ETF", "中证1000ETF", "中证500ETF", "上证50ETF"];
-        const values = [180.68, 144.06, 114.19, 82.95, 18.74, -20.74];
+        const values = [115.64, 94.18, 84.96, 55.57, 3.52, -12.3];
 
         chart.setOption({
             tooltip: {
