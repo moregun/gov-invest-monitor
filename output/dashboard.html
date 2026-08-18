@@ -122,8 +122,8 @@
                 <span class="signal-badge">无明显信号</span>
             </div>
             <div class="meta">
-                生成时间: 2026-08-17 15:59:38<br>
-                数据日期: 2026-08-17
+                生成时间: 2026-08-18 15:52:25<br>
+                数据日期: 2026-08-18
             </div>
         </div>
 
@@ -135,11 +135,11 @@
             </div>
             <div class="stat-card">
                 <div class="label">4日累计预估流入</div>
-                <div class="value accent">-118.25<span style="font-size:14px"> 亿</span></div>
+                <div class="value accent">-224.83<span style="font-size:14px"> 亿</span></div>
             </div>
             <div class="stat-card">
                 <div class="label">同步流入ETF数量</div>
-                <div class="value">1<span style="font-size:14px"> 只</span></div>
+                <div class="value">0<span style="font-size:14px"> 只</span></div>
             </div>
             <div class="stat-card">
                 <div class="label">监控标的总数</div>
@@ -179,42 +179,42 @@
                 <td>1</td>
                 <td>上证50ETF</td>
                 <td>大盘蓝筹</td>
-                <td class="positive">6.84 亿</td>
+                <td class="negative">-6.94 亿</td>
                 <td>0天</td>
             </tr>
             <tr>
                 <td>2</td>
                 <td>中证500ETF</td>
                 <td>中盘宽基</td>
-                <td class="negative">-6.84 亿</td>
+                <td class="negative">-14.53 亿</td>
                 <td>0天</td>
             </tr>
             <tr>
                 <td>3</td>
-                <td>科创50ETF</td>
-                <td>成长宽基</td>
-                <td class="negative">-15.19 亿</td>
-                <td>1天</td>
+                <td>中证1000ETF</td>
+                <td>小盘宽基</td>
+                <td class="negative">-35.45 亿</td>
+                <td>0天</td>
             </tr>
             <tr>
                 <td>4</td>
-                <td>沪深300ETF</td>
-                <td>宽基核心</td>
-                <td class="negative">-33.27 亿</td>
+                <td>创业板ETF</td>
+                <td>成长宽基</td>
+                <td class="negative">-39.29 亿</td>
                 <td>0天</td>
             </tr>
             <tr>
                 <td>5</td>
-                <td>创业板ETF</td>
+                <td>科创50ETF</td>
                 <td>成长宽基</td>
-                <td class="negative">-33.70 亿</td>
+                <td class="negative">-43.29 亿</td>
                 <td>0天</td>
             </tr>
             <tr>
                 <td>6</td>
-                <td>中证1000ETF</td>
-                <td>小盘宽基</td>
-                <td class="negative">-36.09 亿</td>
+                <td>沪深300ETF</td>
+                <td>宽基核心</td>
+                <td class="negative">-85.33 亿</td>
                 <td>0天</td>
             </tr>
                     </tbody>
@@ -240,21 +240,21 @@
             <tr>
                 <td>510050</td>
                 <td>上证50ETF华夏</td>
-                <td>3.052</td>
+                <td>3.047</td>
                 <td>0.000</td>
                 <td class="">0.000%</td>
             </tr>
             <tr>
                 <td>510300</td>
                 <td>沪深300ETF华泰柏瑞</td>
-                <td>4.801</td>
+                <td>4.787</td>
                 <td>0.000</td>
                 <td class="">0.000%</td>
             </tr>
             <tr>
                 <td>510500</td>
                 <td>中证500ETF南方</td>
-                <td>8.197</td>
+                <td>8.185</td>
                 <td>0.000</td>
                 <td class="">0.000%</td>
             </tr>
@@ -268,14 +268,14 @@
             <tr>
                 <td>512100</td>
                 <td>中证1000ETF南方</td>
-                <td>3.225</td>
+                <td>3.213</td>
                 <td>0.000</td>
                 <td class="">0.000%</td>
             </tr>
             <tr>
                 <td>159915</td>
                 <td>创业板</td>
-                <td>3.756</td>
+                <td>3.723</td>
                 <td>0.000</td>
                 <td class="">0.000%</td>
             </tr>
@@ -291,8 +291,8 @@
     <script>
         // 资金流入柱状图
         const chart = echarts.init(document.getElementById('flowChart'));
-        const labels = ["上证50ETF", "中证500ETF", "科创50ETF", "沪深300ETF", "创业板ETF", "中证1000ETF"];
-        const values = [6.84, -6.84, -15.19, -33.27, -33.7, -36.09];
+        const labels = ["上证50ETF", "中证500ETF", "中证1000ETF", "创业板ETF", "科创50ETF", "沪深300ETF"];
+        const values = [-6.94, -14.53, -35.45, -39.29, -43.29, -85.33];
 
         chart.setOption({
             tooltip: {
